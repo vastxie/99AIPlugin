@@ -51,7 +51,7 @@ pm2 start pm2.config.json
 
 ### 请求
 
-```http
+```bash
 curl -X POST "https://api.example.com/plugins/{pluginName}" \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer YOUR_API_KEY" \
