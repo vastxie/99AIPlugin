@@ -1,3 +1,3 @@
 export class ExecutePluginResultDto {
-  result: string;
+  text: string;
 }

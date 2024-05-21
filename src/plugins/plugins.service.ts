@@ -18,11 +18,11 @@ export class PluginsService {
     console.log(`Executing plugin ${pluginName}`);
     switch (pluginName) {
       case 'net-search':
-        return { result: await this.netSearchService.execute(params) };
+        return { text: await this.netSearchService.execute(params) };
       case 'mind-map':
-        return { result: await this.mindMapService.execute() };
+        return { text: await this.mindMapService.execute() };
       default:
-        return { result: `Plugin ${pluginName} not found` };
+        return { text: `Plugin ${pluginName} not found` };
     }
   }
 }
