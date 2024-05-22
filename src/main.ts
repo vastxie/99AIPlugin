@@ -7,6 +7,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
 
+  const port = process.env.CUSTOM_PORT || 3000;
+
   const config = new DocumentBuilder()
     .setTitle('99AI Plugin API')
     .setDescription('99AI Plugin API 文档')
@@ -16,6 +18,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(3000);
+  await app.listen(port);
+  console.log(`App is running on port ${port}`);
 }
 bootstrap();
