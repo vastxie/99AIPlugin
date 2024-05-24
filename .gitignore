@@ -59,3 +59,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.spec.ts
 test
 tsconfig.build.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
