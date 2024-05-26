@@ -16,15 +16,17 @@ export class NetSearchService {
 
     this.lastCallTime = Date.now();
 
-    // 检测问题中是否包含链接
     const urlPattern = /(https?:\/\/[^\s]+)/g;
     const urls = params.prompt.match(urlPattern);
     if (urls && urls.length > 0) {
-      // 如果包含链接，则直接获取网页内容
-      const content = await fetchContent(urls[0], 5000);
-      return `链接: ${urls[0]}\n内容: ${content}`;
+      let results = [];
+      for (let url of urls) {
+        const content = await fetchContent(url, 5000);
+        results.push(`链接: ${url}\n内容: ${content}`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      return results.join('\n\n');
     }
-
     return compileNetwork(params.prompt);
   }
 }
@@ -304,6 +306,7 @@ async function fetchContent(
   let content = '无法获取内容';
   try {
     await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 60000 }); // 设置超时为60秒
+    await page.waitForSelector('body'); 
     content = await page.evaluate(() => {
       const bodyText = document.body.innerText.trim();
       return bodyText.length > 0 ? bodyText : '无内容';
