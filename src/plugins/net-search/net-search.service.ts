@@ -77,8 +77,7 @@ async function baiduSearch(
     const liElements = Array.from(
       document.querySelectorAll('#content_left .result.c-container.new-pmd'),
     );
-    const n = Math.floor(Math.random() * Math.min(6, liElements.length));
-    const slicedElements = liElements.slice(n, n + 2);
+    const slicedElements = liElements.slice(0, 5);
     return slicedElements.map((li) => {
       const linkElement = li.querySelector('h3 a');
       const title = linkElement ? linkElement.textContent || '' : '';
