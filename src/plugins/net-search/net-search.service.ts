@@ -58,6 +58,48 @@ function formatSearchData(searchData: {
  * @param query 用户的查询字符串
  * @return 返回一个包含搜索结果的对象数组
  */
+
+async function baiduSearch(
+  query: string,
+): Promise<Array<{ href: string; title: string; abstract: string }>> {
+  console.log(`开始在Baidu中搜索查询: ${query}`);
+  const browser = await puppeteer_1.default.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  const page = await browser.newPage();
+  await page.goto(`https://www.baidu.com/s?wd=${encodeURIComponent(query)}`);
+  console.log('已导航到Baidu搜索页面');
+
+  const items = await page.evaluate(() => {
+    const liElements = Array.from(
+      document.querySelectorAll('#content_left .result.c-container.new-pmd'),
+    );
+    const n = Math.floor(Math.random() * Math.min(6, liElements.length));
+    const slicedElements = liElements.slice(n, n + 2);
+    return slicedElements.map((li) => {
+      const linkElement = li.querySelector('h3 a');
+      const title = linkElement ? linkElement.textContent || '' : '';
+      const href = linkElement ? linkElement.getAttribute('href') || '' : '';
+      const abstract = li.querySelector('.c-abstract')
+        ? li.querySelector('.c-abstract').textContent || ''
+        : '';
+      return { title, href, abstract };
+    });
+  });
+
+  await browser.close();
+  console.log(`解析到的链接数量：${items.length}`);
+  items.forEach((item) => {
+    console.log(`标题: ${item.title}`);
+    console.log(`链接: ${item.href}`);
+    console.log(`摘要: ${item.abstract}`);
+  });
+
+  return items;
+}
+
+
 async function bingSearch(
   query: string,
 ): Promise<Array<{ href: string; title: string; abstract: string }>> {
@@ -292,7 +334,7 @@ export async function compileNetwork(question: string): Promise<string> {
   // 从环境变量中读取搜索引擎顺序
   const searchEngines = process.env.SEARCH_ENGINES
     ? process.env.SEARCH_ENGINES.split(',')
-    : ['bing', 'sougou', 'duckduckgo', 'google'];
+    : ['bing', 'baidu', 'sougou', 'duckduckgo', 'google'];
 
   let searchData;
   try {
@@ -322,6 +364,9 @@ export async function compileNetwork(question: string): Promise<string> {
       switch (engine) {
         case 'bing':
           engineResults = await bingSearch(question);
+          break;
+        case 'baidu':
+          engineResults = await baiduSearch(question);
           break;
         case 'sougou':
           engineResults = await souGouSearch(question);
