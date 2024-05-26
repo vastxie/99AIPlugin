@@ -19,8 +19,8 @@ export class NetSearchService {
     const urlPattern = /(https?:\/\/[^\s]+)/g;
     const urls = params.prompt.match(urlPattern);
     if (urls && urls.length > 0) {
-      let results = [];
-      for (let url of urls) {
+      const results = [];
+      for (const url of urls) {
         const content = await fetchContent(url, 5000);
         results.push(`链接: ${url}\n内容: ${content}`);
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -65,7 +65,7 @@ async function baiduSearch(
   query: string,
 ): Promise<Array<{ href: string; title: string; abstract: string }>> {
   console.log(`开始在Baidu中搜索查询: ${query}`);
-  const browser = await puppeteer_1.default.launch({
+  const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
@@ -100,7 +100,6 @@ async function baiduSearch(
 
   return items;
 }
-
 
 async function bingSearch(
   query: string,
@@ -306,7 +305,7 @@ async function fetchContent(
   let content = '无法获取内容';
   try {
     await page.goto(href, { waitUntil: 'domcontentloaded', timeout: 60000 }); // 设置超时为60秒
-    await page.waitForSelector('body'); 
+    await page.waitForSelector('body');
     content = await page.evaluate(() => {
       const bodyText = document.body.innerText.trim();
       return bodyText.length > 0 ? bodyText : '无内容';
