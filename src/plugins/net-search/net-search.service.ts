@@ -72,7 +72,7 @@ async function baiduSearch(
   const page = await browser.newPage();
   await page.goto(`https://www.baidu.com/s?wd=${encodeURIComponent(query)}`);
   console.log('已导航到Baidu搜索页面');
-
+  await page.waitForSelector('#content_left .result.c-container.new-pmd', { timeout: 10000 });
   const items = await page.evaluate(() => {
     const liElements = Array.from(
       document.querySelectorAll('#content_left .result.c-container.new-pmd'),
@@ -82,8 +82,7 @@ async function baiduSearch(
       const linkElement = li.querySelector('h3 a');
       const title = linkElement ? linkElement.textContent || '' : '';
       const href = linkElement ? linkElement.getAttribute('href') || '' : '';
-      const abstract = li.querySelector('.c-abstract')
-        ? li.querySelector('.c-abstract').textContent || ''
+      const abstract = li.querySelector('.c-abstract') ? li.querySelector('.c-abstract').textContent.trim() : li.querySelector('.content-right_2s-H4') ? li.querySelector('.content-right_2s-H4').textContent.trim() || ''
         : '';
       return { title, href, abstract };
     });
