@@ -3,6 +3,7 @@ import { ExecutePluginDto } from '../dto/execute-plugin.dto';
 import puppeteer from 'puppeteer';
 import axios from 'axios';
 import { cities } from './cities';
+import { search, SafeSearchType } from 'duck-duck-scrape';
 
 @Injectable()
 export class NetSearchService {
@@ -72,7 +73,9 @@ async function baiduSearch(
   const page = await browser.newPage();
   await page.goto(`https://www.baidu.com/s?wd=${encodeURIComponent(query)}`);
   console.log('已导航到Baidu搜索页面');
-  await page.waitForSelector('#content_left .result.c-container.new-pmd', { timeout: 10000 });
+  await page.waitForSelector('#content_left .result.c-container.new-pmd', {
+    timeout: 60000,
+  });
   const items = await page.evaluate(() => {
     const liElements = Array.from(
       document.querySelectorAll('#content_left .result.c-container.new-pmd'),
@@ -82,8 +85,11 @@ async function baiduSearch(
       const linkElement = li.querySelector('h3 a');
       const title = linkElement ? linkElement.textContent || '' : '';
       const href = linkElement ? linkElement.getAttribute('href') || '' : '';
-      const abstract = li.querySelector('.c-abstract') ? li.querySelector('.c-abstract').textContent.trim() : li.querySelector('.content-right_2s-H4') ? li.querySelector('.content-right_2s-H4').textContent.trim() || ''
-        : '';
+      const abstract = li.querySelector('.c-abstract')
+        ? li.querySelector('.c-abstract').textContent.trim()
+        : li.querySelector('.content-right_2s-H4')
+          ? li.querySelector('.content-right_2s-H4').textContent.trim() || ''
+          : '';
       return { title, href, abstract };
     });
   });
@@ -194,40 +200,41 @@ async function googleSearch(
 }
 
 /**
- * 使用 Puppeteer 在 DuckDuckGo 中搜索给定查询并抓取前五个搜索结果的链接和内容。
+ * 使用 DuckDuckGo 中搜索给定页面的内容。
  * @param query 用户的查询字符串
- * @return 返回一个包含搜索结果的对象数组
+ * @return 返回一个页面抓取的数据
+ * @throws 如果搜索结果格式无效，则抛出错误
  */
 async function duckduckgoSearch(
   query: string,
 ): Promise<Array<{ href: string; title: string; abstract: string }>> {
   console.log(`开始在DuckDuckGo中搜索查询: ${query}`);
-  const duckduckgoUrl = process.env.DUCKDUCKGO_URL || 'https://duckduckgo.com';
-  const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+
+  const searchResults = await search(query, {
+    safeSearch: SafeSearchType.STRICT,
   });
-  const page = await browser.newPage();
-  await page.goto(
-    `${duckduckgoUrl}/?q=${encodeURIComponent(query)}&kl=hk-tzh&ia=web`,
-  );
+
   console.log('已导航到DuckDuckGo搜索页面');
 
-  const items = await page.evaluate(() => {
-    const liElements = Array.from(
-      document.querySelectorAll('#react-layout ol li'),
-    );
-    const firstFiveLiElements = liElements.slice(0, 5);
-    return firstFiveLiElements.map((li) => {
-      const abstractElement = li.querySelector('div:nth-child(3) > div');
-      const linkElement = li.querySelector('div:nth-child(2) > a');
-      const href = linkElement ? linkElement.getAttribute('href') || '' : '';
-      const title = linkElement ? linkElement.textContent || '' : '';
-      const abstract = abstractElement ? abstractElement.textContent || '' : '';
-      return { href, title, abstract };
-    });
-  });
+  if (!searchResults || !Array.isArray(searchResults.results)) {
+    throw new Error('Invalid search results format');
+  }
 
-  await browser.close();
+  const items = searchResults.results
+    .slice(0, 5)
+    .map((result, index) => {
+      if (!result.url || !result.title || !result.description) {
+        console.warn('Invalid result found:', result);
+        return null;
+      }
+      return {
+        href: result.url,
+        title: result.title,
+        abstract: result.description,
+        index: index + 1,
+      };
+    })
+    .filter((result) => result !== null);
 
   console.log(`解析到的链接数量：${items.length}`);
   items.forEach((item) => {
